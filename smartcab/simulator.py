@@ -183,7 +183,8 @@ class Simulator(object):
                         self.last_updated = self.current_time
                     
                     # Render text
-                    self.render_text(trial, testing)
+                    if testing:
+                        self.render_text(trial, testing)
 
                     # Render GUI and sleep
                     if self.display:
@@ -223,6 +224,7 @@ class Simulator(object):
             # Increment
             total_trials = total_trials + 1
             trial = trial + 1
+            print('trial', trial)
 
         # Clean up
         if self.log_metrics:
