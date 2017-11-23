@@ -5,6 +5,7 @@ from planner import RoutePlanner
 from simulator import Simulator
 import random
 import argparse
+import math
 
 args = None
 
@@ -27,6 +28,7 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set any additional class parameters as needed
+        self.train_times = 0
 
 
     def reset(self, destination=None, testing=False):
@@ -44,6 +46,18 @@ class LearningAgent(Agent):
         # Update additional class parameters as needed
         # If 'testing' is True, set epsilon and alpha to 0
 
+        if testing:
+            self.epsilon = 0
+            self.alpha = 0
+        else:
+            self.train_times += 1
+            # self.epsilon -= 0.05
+            # self.epsilon = self.alpha ** self.train_times
+            # self.epsilon = 1. / self.train_times ** 2
+            # self.epsilon = math.exp(-self.train_times * self.alpha)
+            # self.epsilon = math.cos(self.alpha * self.train_times)
+            self.epsilon = 1. / (self.alpha * self.train_times)
+
         return None
 
     def build_state(self):
@@ -60,7 +74,7 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set 'state' as a tuple of relevant data for the agent
-        state = None
+        state = (waypoint, inputs['light'], inputs['left'], inputs['right'], inputs['oncoming'])
 
         return state
 
@@ -74,8 +88,10 @@ class LearningAgent(Agent):
         ###########
         # Calculate the maximum Q-value of all actions for a given state
 
-        maxQ = None
+        actions = self.Q[state]
+        maxQ = max(actions, key=lambda k: actions[k])
 
+        # key
         return maxQ
 
 
@@ -88,6 +104,9 @@ class LearningAgent(Agent):
         # When learning, check if the 'state' is not in the Q-table
         # If it is not, create a new dictionary for that state
         #   Then, for each action available, set the initial Q-value to 0.0
+        if self.learning:
+            if state not in self.Q.keys():
+                self.Q[state] = {k: 0.0 for k in self.valid_actions}
 
         return
 
@@ -110,7 +129,10 @@ class LearningAgent(Agent):
         if not self.learning:
             action = random.choice(self.valid_actions)
         else:
-            pass
+            if self.epsilon > args.tolerance and random.random() < self.epsilon:
+                action = random.choice(self.valid_actions)
+            else:
+                action = self.get_maxQ(state)
 
         return action
 
@@ -125,6 +147,9 @@ class LearningAgent(Agent):
         ###########
         # When learning, implement the value iteration update rule
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
+        if self.learning:
+            old = self.Q[state][action]
+            self.Q[state][action] = self.alpha * reward + (1 - self.alpha) * old
 
         return
 
@@ -161,7 +186,7 @@ def run():
     #   learning   - set to True to force the driving agent to use Q-learning
     #    * epsilon - continuous value for the exploration factor, default is 1
     #    * alpha   - continuous value for the learning rate, default is 0.5
-    agent = env.create_agent(LearningAgent)
+    agent = env.create_agent(LearningAgent, learning=args.learning, alpha=args.alpha)
 
     ##############
     # Follow the driving agent
@@ -177,7 +202,8 @@ def run():
     #   display      - set to False to disable the GUI if PyGame is enabled
     #   log_metrics  - set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
-    sim = Simulator(env, update_delay=args.update_delay, log_metrics=args.log_metrics, display=not args.nogui)
+    sim = Simulator(env, update_delay=args.update_delay, log_metrics=args.log_metrics, display=not args.nogui,
+                    optimized=args.optimized)
 
     ##############
     # Run the simulator
@@ -210,6 +236,28 @@ if __name__ == '__main__':
                         help="discrete number of testing trials to perform, default is 0",
                         type=int,
                         default=0)
+    parser.add_argument("--alpha",
+                        help="learning rate",
+                        type=float,
+                        default=0.5)
+
+    parser.add_argument("--epsilon",
+                        help="explore factor",
+                        type=float,
+                        default=1.0)
+
+    parser.add_argument("--tolerance",
+                        help="for test epsilon",
+                        type=float,
+                        default=0.05)
+
+    parser.add_argument("--learning",
+                        help="set to True to force the driving agent to use Q-learning",
+                        action='store_true')
+
+    parser.add_argument("--optimized",
+                        help="set to True to change the default log file name",
+                        action='store_true')
 
     args, _ = parser.parse_known_args()
     print(args)
