@@ -51,12 +51,12 @@ class LearningAgent(Agent):
             self.alpha = 0
         else:
             self.train_times += 1
-            # self.epsilon -= 0.05
+            # self.epsilon -= args.tolerance
             # self.epsilon = self.alpha ** self.train_times
             # self.epsilon = 1. / self.train_times ** 2
-            # self.epsilon = math.exp(-self.train_times * self.alpha)
+            self.epsilon = math.exp(-self.train_times * -0.01)
             # self.epsilon = math.cos(self.alpha * self.train_times)
-            self.epsilon = 1. / (self.alpha * self.train_times)
+            # self.epsilon = 1. / self.train_times
 
         return None
 
@@ -91,8 +91,7 @@ class LearningAgent(Agent):
         actions = self.Q[state]
         maxQ = max(actions, key=lambda k: actions[k])
 
-        # key
-        return maxQ
+        return actions[maxQ]
 
 
     def createQ(self, state):
@@ -132,7 +131,12 @@ class LearningAgent(Agent):
             if self.epsilon > args.tolerance and random.random() < self.epsilon:
                 action = random.choice(self.valid_actions)
             else:
-                action = self.get_maxQ(state)
+                maxq = self.get_maxQ(state)
+                actions = []
+                for act in self.Q[state].keys():
+                    if self.Q[state][act] == maxq:
+                        actions.append(act)
+                action = random.choice(actions)
 
         return action
 
@@ -210,7 +214,7 @@ def run():
     # Flags:
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05
     #   n_test     - discrete number of testing trials to perform, default is 0
-    sim.run(n_test=args.n_test)
+    sim.run(tolerance=args.tolerance, n_test=args.n_test)
 
 
 if __name__ == '__main__':
