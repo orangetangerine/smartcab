@@ -51,13 +51,15 @@ class LearningAgent(Agent):
             self.alpha = 0
         else:
             self.train_times += 1
-            self.alpha *= 0.98
+            # self.epsilon -= 0.05
+            # self.alpha *= 0.98
             # self.epsilon -= args.tolerance
-            self.epsilon *= 0.98
+            # self.epsilon *= 0.98
             # self.epsilon = 1. / self.train_times ** 2
             # self.epsilon = math.exp(-self.train_times * -0.01)
             # self.epsilon = math.cos(0.5 * self.train_times)
             # self.epsilon = 1. / (0.5*self.train_times)
+            self.epsilon = math.cos(0.005 * math.pi * self.train_times)
 
         return None
 
